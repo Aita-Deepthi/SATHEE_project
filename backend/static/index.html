@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SATHEE Guidance Agent</title>
+<style>
+  :root {
+    --ink: #12203a;        /* deep study-lamp navy */
+    --paper: #f6f3ea;      /* soft unbleached paper */
+    --paper-raised: #ffffff;
+    --marigold: #e0932c;   /* diya-flame accent, warm not neon */
+    --marigold-deep: #b96f18;
+    --line: #d9d2bf;
+    --muted: #6b6455;
+    --good: #3f7d5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    min-height: 100vh;
+  }
+  header {
+    padding: 22px 28px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  header .brand {
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+  header .brand span { color: var(--marigold-deep); }
+  header .sub {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12.5px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+  nav {
+    display: flex;
+    gap: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  nav button {
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  nav button.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  main { max-width: 760px; margin: 0 auto; padding: 20px 20px 100px; }
+
+  /* Chat */
+  #chat-view { display: flex; flex-direction: column; gap: 12px; }
+  .msg {
+    max-width: 82%;
+    padding: 12px 15px;
+    border-radius: 14px;
+    line-height: 1.5;
+    font-size: 15.5px;
+    white-space: pre-wrap;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: var(--ink);
+    color: var(--paper);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.bot {
+    align-self: flex-start;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 4px;
+  }
+  #composer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, var(--paper) 60%, transparent);
+    padding: 18px 20px 22px;
+  }
+  #composer form {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 6px 6px 6px 16px;
+    box-shadow: 0 6px 20px rgba(18,32,58,0.08);
+  }
+  #composer input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15.5px;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  #composer button {
+    border: none;
+    background: var(--marigold);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+  }
+  #composer button:hover { background: var(--marigold-deep); }
+
+  /* Plan view */
+  #plan-view { display: none; }
+  #plan-empty {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--muted);
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 14.5px;
+  }
+  .phase-rail {
+    display: flex;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 18px 0 22px;
+    border: 1px solid var(--line);
+  }
+  .phase-rail div { height: 100%; }
+  .phase-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .phase-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .phase-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .today-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--marigold);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+  }
+  .today-card .eyebrow {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--marigold-deep);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .today-card h3 { margin: 0 0 10px; font-size: 19px; }
+  .topic-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14.5px;
+  }
+  .topic-row:last-child { border-bottom: none; }
+  .topic-row .count {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .practice-list, .resource-list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .practice-list li, .resource-list li { margin-bottom: 4px; }
+
+  .day-list { font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .day-row .d { color: var(--muted); width: 46px; flex-shrink: 0; }
+  .day-row .dt { width: 90px; flex-shrink: 0; }
+  .day-row .ph {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .day-row .tp { flex: 1; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">SATHEE <span>Guidance Agent</span></div>
+    <div class="sub">Free JEE / NEET prep by IIT Kanpur — your study companion</div>
+  </div>
+  <nav>
+    <button id="tab-chat" class="active">Chat</button>
+    <button id="tab-plan">My Study Plan</button>
+  </nav>
+</header>
+
+<main>
+  <div id="chat-view">
+    <div class="msg bot">Hi! I'm here to help you make the most of SATHEE — IIT Kanpur's free JEE/NEET prep platform. Which exam are you preparing for?</div>
+  </div>
+
+  <div id="plan-view">
+    <div id="plan-empty">No study plan yet. Tell the agent your exam and exam date in the Chat tab, and it'll build one for you here.</div>
+    <div id="plan-content" style="display:none;"></div>
+  </div>
+</main>
+
+<div id="composer">
+  <form id="chat-form">
+    <input id="chat-input" type="text" placeholder="Type your message…" autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+const PHASE_COLORS = {
+  "Foundation": "#e0932c", "Coverage": "#e0932c", "Rapid Revision": "#e0932c", "Final Sprint": "#e0932c",
+  "Revision": "#4a6fa5",
+  "Practice & Mocks": "#3f7d5c",
+  "Final Revision": "#b64b3c",
+};
+
+let sessionId = localStorage.getItem("sathee_session_id");
+
+async function initSession() {
+  if (!sessionId) {
+    const res = await fetch("/api/session/new");
+    const data = await res.json();
+    sessionId = data.session_id;
+    localStorage.setItem("sathee_session_id", sessionId);
+  }
+}
+
+const chatView = document.getElementById("chat-view");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+
+function addMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "user" ? "user" : "bot");
+  div.textContent = text;
+  chatView.appendChild(div);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text) return;
+  addMessage("user", text);
+  chatInput.value = "";
+  const thinking = document.createElement("div");
+  thinking.className = "msg bot";
+  thinking.textContent = "…";
+  chatView.appendChild(thinking);
+  window.scrollTo(0, document.body.scrollHeight);
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+    });
+    const data = await res.json();
+    thinking.remove();
+    addMessage("bot", data.reply);
+    if (planTab.classList.contains("active")) loadPlan();
+  } catch (err) {
+    thinking.remove();
+    addMessage("bot", "Sorry, something went wrong reaching the server. Please try again.");
+  }
+});
+
+// Tabs
+const chatTab = document.getElementById("tab-chat");
+const planTab = document.getElementById("tab-plan");
+const chatViewEl = document.getElementById("chat-view");
+const planViewEl = document.getElementById("plan-view");
+const composer = document.getElementById("composer");
+
+chatTab.addEventListener("click", () => {
+  chatTab.classList.add("active"); planTab.classList.remove("active");
+  chatViewEl.style.display = "flex"; planViewEl.style.display = "none";
+  composer.style.display = "block";
+});
+planTab.addEventListener("click", () => {
+  planTab.classList.add("active"); chatTab.classList.remove("active");
+  chatViewEl.style.display = "none"; planViewEl.style.display = "block";
+  composer.style.display = "none";
+  loadPlan();
+});
+
+async function loadPlan() {
+  const res = await fetch(`/api/study-plan/${sessionId}`);
+  const data = await res.json();
+  const empty = document.getElementById("plan-empty");
+  const content = document.getElementById("plan-content");
+  if (!data.plan) {
+    empty.style.display = "block";
+    content.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  content.style.display = "block";
+  renderPlan(data.plan, data.today);
+}
+
+function renderPlan(plan, today) {
+  const content = document.getElementById("plan-content");
+  content.innerHTML = "";
+
+  // Phase rail
+  const phaseCounts = {};
+  plan.forEach(d => phaseCounts[d.phase] = (phaseCounts[d.phase] || 0) + 1);
+  const rail = document.createElement("div");
+  rail.className = "phase-rail";
+  Object.entries(phaseCounts).forEach(([phase, count]) => {
+    const seg = document.createElement("div");
+    seg.style.width = (count / plan.length * 100) + "%";
+    seg.style.background = PHASE_COLORS[phase] || "#999";
+    rail.appendChild(seg);
+  });
+  content.appendChild(rail);
+
+  const legend = document.createElement("div");
+  legend.className = "phase-legend";
+  Object.keys(phaseCounts).forEach(phase => {
+    const s = document.createElement("span");
+    s.innerHTML = `<i style="background:${PHASE_COLORS[phase] || '#999'}"></i>${phase}`;
+    legend.appendChild(s);
+  });
+  content.appendChild(legend);
+
+  // Today card
+  if (today) {
+    const card = document.createElement("div");
+    card.className = "today-card";
+    let html = `<div class="eyebrow">Day ${today.day} · ${today.phase}</div><h3>Today's Plan — ${today.date}</h3>`;
+    today.subjects.forEach(s => {
+      html += `<div class="topic-row"><span>${s.subject}: ${s.topic}</span><span class="count">${s.practice_problems} problems on SATHEE</span></div>`;
+    });
+    if (today.practice.length) {
+      html += `<ul class="practice-list">${today.practice.map(p => `<li>${p}</li>`).join("")}</ul>`;
+    }
+    html += `<ul class="resource-list">${today.resources.map(r => `<li>${r}</li>`).join("")}</ul>`;
+    card.innerHTML = html;
+    content.appendChild(card);
+  }
+
+  // Full day list
+  const list = document.createElement("div");
+  list.className = "day-list";
+  plan.forEach(d => {
+    const row = document.createElement("div");
+    row.className = "day-row";
+    const topics = d.subjects.map(s => s.topic).join(", ") || d.practice[0] || "";
+    row.innerHTML = `<span class="d">Day ${d.day}</span><span class="dt">${d.date}</span><span class="ph" style="border-color:${PHASE_COLORS[d.phase]||'#999'}">${d.phase}</span><span class="tp">${topics}</span>`;
+    list.appendChild(row);
+  });
+  content.appendChild(list);
+}
+
+initSession();
+</script>
+
+</body>
+</html>
