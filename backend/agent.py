@@ -11,7 +11,7 @@ import json
 from datetime import date
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 import session_store
 from knowledge_base import build_system_prompt
@@ -30,6 +30,13 @@ client = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
 MODEL = os.environ.get("OPENAI_MODEL", "gemini-3.6-flash")
+
+RESOURCE_SUGGESTIONS = (
+    "\n\nUseful free resources:\n"
+    "- SATHEE: https://sathee.iitk.ac.in/\n"
+    "- NCERT textbooks: https://ncert.nic.in/textbook.php\n"
+    "- NTA exam resources: https://www.nta.ac.in/"
+)
 
 TOOLS = [
     {
@@ -74,6 +81,15 @@ TOOLS = [
         },
     },
 ]
+
+
+def _quota_reply() -> str:
+    return (
+        "Gemini's free API quota has been reached for this model today. "
+        "Please wait for the quota to reset, use another Gemini API key, "
+        "or select a model with available quota in backend/.env. "
+        "Your study plan features will work again when the AI quota is available."
+    )
 
 
 def _handle_tool_call(session_id: str, name: str, args: dict) -> str:
@@ -122,11 +138,16 @@ def chat(session_id: str, user_message: str) -> str:
     messages += session_store.get_history(session_id)
 
     # First pass — model may respond directly or call tool(s)
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        tools=TOOLS,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            tools=TOOLS,
+        )
+    except RateLimitError:
+        reply = _quota_reply()
+        session_store.append_message(session_id, "assistant", reply)
+        return reply
     choice = response.choices[0]
 
     if choice.message.tool_calls:
@@ -145,10 +166,19 @@ def chat(session_id: str, user_message: str) -> str:
         # Refresh system prompt with updated profile, then second pass for final reply
         profile = session_store.get_profile(session_id)
         messages[0] = {"role": "system", "content": build_system_prompt(profile, context)}
-        final = client.chat.completions.create(model=MODEL, messages=messages)
+        try:
+            final = client.chat.completions.create(model=MODEL, messages=messages)
+        except RateLimitError:
+            reply = _quota_reply()
+            session_store.append_message(session_id, "assistant", reply)
+            return reply
         reply = final.choices[0].message.content
     else:
         reply = choice.message.content
+
+    resource_words = ("website", "websites", "resource", "resources", "material", "materials", "link")
+    if any(word in user_message.lower() for word in resource_words) and "https://" not in reply:
+        reply += RESOURCE_SUGGESTIONS
 
     session_store.append_message(session_id, "assistant", reply)
     return reply

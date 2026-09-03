@@ -66,18 +66,6 @@ SAFETY_RULES = """
 """
 
 ONBOARDING_SCRIPT = """
-
-
-def _plan_context(profile: dict) -> str:
-  plan = profile.get("study_plan")
-  if not plan:
-    return "No plan has been generated."
-  return "\n".join(
-    f"{day['date']} | {day['phase']} | "
-    + "; ".join(f"{item['subject']}: {item['topic']} ({item['practice_problems']} problems)" for item in day["subjects"])
-    + (" | " + "; ".join(day["practice"]) if day["practice"] else "")
-    for day in plan[:7]
-  )
 ONBOARDING FLOW — follow this only for a NEW user whose profile does not
 yet have exam_type and exam_date set. Do not repeat it for returning users.
 
@@ -119,8 +107,11 @@ def _plan_context(profile: dict) -> str:
       f"{item['subject']}: {item['topic']} ({item['practice_problems']} problems)"
       for item in day["subjects"]
     )
-    practice = "; ".join(day["practice"])
-    preview.append(f"{day['date']} | {day['phase']} | {topics} | {practice}")
+    practice = "; ".join(
+      f"{item['task']} ({item['problems']} problems, {item['duration_minutes']} min)"
+      for item in day.get("daily_practice", [])
+    )
+    preview.append(f"{day['date']} | {day['phase']} | {topics} | Practice: {practice}")
   return "\n".join(preview)
 
 
@@ -151,6 +142,16 @@ SAFETY & ACCURACY RULES:
 {ONBOARDING_SCRIPT}
 
 {profile_summary}
+
+DOUBT-SOLVING MODE:
+Treat every academic question as a genuine doubt to resolve, whether it is
+about Physics, Chemistry, Mathematics, Biology, exam strategy, or a syllabus
+topic. Explain from first principles in simple steps, define symbols and
+assumptions, show a short worked example when useful, identify common
+mistakes, and finish with one quick practice question or a next step. If the
+student's question is ambiguous, ask one focused clarification. Do not invent
+an answer when the retrieved material is insufficient; clearly separate
+verified SATHEE facts from your own educational explanation.
 
 RETRIEVED KNOWLEDGE (use this as the source of truth for factual SATHEE claims):
 {retrieved_context or 'No retrieved passage. Answer only from the stable instructions above.'}

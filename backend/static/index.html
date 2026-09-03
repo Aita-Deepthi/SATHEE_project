@@ -195,6 +195,10 @@
     color: var(--ink);
   }
   .practice-list li, .resource-list li { margin-bottom: 4px; }
+  .resource-list a { color: var(--marigold-deep); }
+  .msg a { color: var(--marigold-deep); }
+  .download-plan { display: inline-block; margin: 0 0 22px; padding: 10px 14px; background: var(--ink); color: var(--paper); border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; text-decoration: none; }
+  .download-plan:hover { background: var(--marigold-deep); }
 
   .day-list { font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
   .day-row {
@@ -274,7 +278,21 @@ const chatInput = document.getElementById("chat-input");
 function addMessage(role, text) {
   const div = document.createElement("div");
   div.className = "msg " + (role === "user" ? "user" : "bot");
-  div.textContent = text;
+  const linkPattern = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\))|(https?:\/\/[^\s<)]+)/g;
+  let lastIndex = 0;
+  text.replace(linkPattern, (match, markdown, label, markdownUrl, plainUrl, offset) => {
+    div.appendChild(document.createTextNode(text.slice(lastIndex, offset)));
+    const link = document.createElement("a");
+    const url = markdownUrl || plainUrl;
+    link.href = url.replace(/[.,]$/, "");
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = label || link.href;
+    div.appendChild(link);
+    lastIndex = offset + match.length;
+    return match;
+  });
+  div.appendChild(document.createTextNode(text.slice(lastIndex)));
   chatView.appendChild(div);
   window.scrollTo(0, document.body.scrollHeight);
 }
@@ -345,6 +363,22 @@ function renderPlan(plan, today) {
   const content = document.getElementById("plan-content");
   content.innerHTML = "";
 
+  const download = document.createElement("a");
+  download.className = "download-plan";
+  download.href = `/api/study-plan/${sessionId}/download`;
+  download.textContent = "Download study plan (.docx)";
+  download.download = "study_plan.docx";
+  content.appendChild(download);
+
+  function resourceLink(resource) {
+    const urlMatch = resource.match(/(?:https?:\/\/|www\.)[^\s)]+|(?:sathee\.iitk\.ac\.in)[^\s)]*/i);
+    if (!urlMatch) return document.createTextNode(resource).textContent;
+    const displayedUrl = urlMatch[0];
+    const url = displayedUrl.startsWith("http") ? displayedUrl : `https://${displayedUrl}`;
+    const label = resource.replace(displayedUrl, "").replace(/[()]/g, "").trim();
+    return `${label} <a href="${url}" target="_blank" rel="noopener noreferrer">Open resource</a>`;
+  }
+
   // Phase rail
   const phaseCounts = {};
   plan.forEach(d => phaseCounts[d.phase] = (phaseCounts[d.phase] || 0) + 1);
@@ -378,7 +412,10 @@ function renderPlan(plan, today) {
     if (today.practice.length) {
       html += `<ul class="practice-list">${today.practice.map(p => `<li>${p}</li>`).join("")}</ul>`;
     }
-    html += `<ul class="resource-list">${today.resources.map(r => `<li>${r}</li>`).join("")}</ul>`;
+    if (today.daily_practice && today.daily_practice.length) {
+      html += `<h4>Daily practice timetable</h4><ul class="practice-list">${today.daily_practice.map(p => `<li><strong>${p.problems} problems</strong> · ${p.duration_minutes} min · ${p.task}</li>`).join("")}</ul>`;
+    }
+    html += `<ul class="resource-list">${today.resources.map(r => `<li>${resourceLink(r)}</li>`).join("")}</ul>`;
     card.innerHTML = html;
     content.appendChild(card);
   }
@@ -389,8 +426,9 @@ function renderPlan(plan, today) {
   plan.forEach(d => {
     const row = document.createElement("div");
     row.className = "day-row";
-    const topics = d.subjects.map(s => s.topic).join(", ") || d.practice[0] || "";
-    row.innerHTML = `<span class="d">Day ${d.day}</span><span class="dt">${d.date}</span><span class="ph" style="border-color:${PHASE_COLORS[d.phase]||'#999'}">${d.phase}</span><span class="tp">${topics}</span>`;
+    const topics = d.subjects.map(s => s.topic).join(", ") || "No new topics";
+    const practice = d.daily_practice && d.daily_practice.length ? ` · Practice: ${d.daily_practice.map(p => `${p.problems} problems`).join(" + ")}` : "";
+    row.innerHTML = `<span class="d">Day ${d.day}</span><span class="dt">${d.date}</span><span class="ph" style="border-color:${PHASE_COLORS[d.phase]||'#999'}">${d.phase}</span><span class="tp">${topics}${practice}</span>`;
     list.appendChild(row);
   });
   content.appendChild(list);

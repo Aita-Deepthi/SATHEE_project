@@ -68,6 +68,7 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
     {
       "day": int, "date": "YYYY-MM-DD", "phase": str,
       "subjects": [{"subject": str, "topic": str, "practice_problems": int}, ...],
+    "daily_practice": [{"task": str, "problems": int, "duration_minutes": int}, ...],
       "practice": [str, ...],   # extra practice instructions (PYQs, mocks)
       "resources": [str, ...]
     }
@@ -97,6 +98,7 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
                 "date": current_date.isoformat(),
                 "phase": phase_name,
                 "subjects": [],
+                "daily_practice": [],
                 "practice": [],
                 "resources": list(DEFAULT_RESOURCES),
             }
@@ -111,6 +113,25 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
                         "practice_problems": 15,
                     })
                 day["practice"].append("10 practice problems per topic covered today (SATHEE topic test)")
+                day["daily_practice"].append({
+                    "task": "SATHEE topic test for today's topics",
+                    "problems": max(10, len(day["subjects"]) * 10),
+                    "duration_minutes": 45,
+                })
+
+            elif phase_name in ("Foundation", "Coverage", "Rapid Revision"):
+                revision_topic = all_topics[(day_number - 1) % len(all_topics)]
+                day["subjects"].append({
+                    "subject": revision_topic["subject"],
+                    "topic": f"Revise {revision_topic['name']}: notes, formulas, and weak areas",
+                    "practice_problems": 20,
+                })
+                day["practice"].append("20 SATHEE practice problems for the revision topic, followed by error review")
+                day["daily_practice"].append({
+                    "task": f"SATHEE revision test: {revision_topic['name']}",
+                    "problems": 20,
+                    "duration_minutes": 60,
+                })
 
             elif phase_name == "Revision":
                 subj = subjects[day_number % len(subjects)]
@@ -120,17 +141,45 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
                     "practice_problems": 20,
                 })
                 day["practice"].append("15 mixed Previous Year Questions (PYQs) across all subjects, timed")
+                day["daily_practice"].append({
+                    "task": "Mixed SATHEE Previous Year Questions (PYQs)",
+                    "problems": 15,
+                    "duration_minutes": 60,
+                })
 
             elif phase_name in ("Practice & Mocks", "Final Sprint"):
                 if day_number % 7 == 0:
                     day["practice"].append("Full-length mock test (SATHEE test series), then a full error-analysis pass")
+                    day["daily_practice"].append({
+                        "task": "SATHEE full-length mock test + error analysis",
+                        "problems": 75,
+                        "duration_minutes": 180,
+                    })
                 else:
                     day["practice"].append("25-30 mixed PYQs across subjects, timed like exam conditions")
                     day["practice"].append("Review yesterday's mistakes for 20 minutes before starting new problems")
+                    day["daily_practice"].append({
+                        "task": "Mixed SATHEE PYQs under exam conditions",
+                        "problems": 30,
+                        "duration_minutes": 75,
+                    })
 
             elif phase_name == "Final Revision":
                 day["practice"].append("Revise formula/concept sheets only — no new topics")
                 day["practice"].append("1 sectional or full mock test + review")
+                day["daily_practice"].append({
+                    "task": "SATHEE sectional/full mock test + review",
+                    "problems": 30,
+                    "duration_minutes": 90,
+                })
+
+            if not day["daily_practice"]:
+                day["daily_practice"].append({
+                    "task": "SATHEE mixed practice problems and error review",
+                    "problems": 20,
+                    "duration_minutes": 50,
+                })
+                day["practice"].append("20 mixed SATHEE practice problems, followed by error review")
 
             plan.append(day)
 
