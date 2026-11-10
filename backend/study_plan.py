@@ -101,17 +101,8 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
                 "resources": list(DEFAULT_RESOURCES),
             }
 
-            if phase_name in ("Foundation", "Coverage", "Rapid Revision") and topic_idx < len(all_topics):
-                for _ in range(min(topics_per_day, len(all_topics) - topic_idx)):
-                    t = all_topics[topic_idx]
-                    topic_idx += 1
-                    day["subjects"].append({
-                        "subject": t["subject"],
-                        "topic": t["name"],
-                        "practice_problems": 15,
-                    })
+            if phase_name in ("Foundation", "Coverage", "Rapid Revision"):
                 day["practice"].append("10 practice problems per topic covered today (SATHEE topic test)")
-
             elif phase_name == "Revision":
                 subj = subjects[day_number % len(subjects)]
                 day["subjects"].append({
@@ -134,11 +125,19 @@ def generate_study_plan(exam_type: str, exam_date: date, start_date: date = None
 
             plan.append(day)
 
-    # Any leftover low-priority topics (only happens on very short timelines):
-    # fold them into the last Revision-type day's notes rather than dropping silently.
-    if topic_idx < len(all_topics):
-        leftover = ", ".join(t["name"] for t in all_topics[topic_idx:])
-        plan[-1]["practice"].append(f"Time was too short to fully cover: {leftover}. Skim NCERT summary for these.")
+    # Assign every syllabus topic to a concrete day. On short timelines this
+    # intentionally creates longer days instead of hiding topics in one note.
+    topic_days = [
+        day for day in plan
+        if day["phase"] != "Final Revision"
+    ] or plan
+    for index, topic in enumerate(all_topics):
+        day = topic_days[index % len(topic_days)]
+        day["subjects"].append({
+            "subject": topic["subject"],
+            "topic": topic["name"],
+            "practice_problems": 15,
+        })
 
     return plan
 

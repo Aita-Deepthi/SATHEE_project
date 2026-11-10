@@ -3,4 +3,4 @@ uvicorn[standard]
 openai
 pydantic
 python-dotenv
-# RAG uses the Python standard library; no vector database is required.
+pinecone

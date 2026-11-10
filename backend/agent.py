@@ -36,19 +36,12 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "update_user_profile",
-            "description": "Record or update known facts about the student: exam type and/or exam date. Call this as soon as you learn either.",
+            "description": "Record the student's exam type or exam date.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "exam_type": {
-                        "type": "string",
-                        "enum": ["JEE Main", "JEE Advanced", "NEET"],
-                        "description": "The exam the student is preparing for.",
-                    },
-                    "exam_date": {
-                        "type": "string",
-                        "description": "The student's exam date in ISO format YYYY-MM-DD.",
-                    },
+                    "exam_type": {"type": "string", "enum": ["JEE Main", "JEE Advanced", "NEET"]},
+                    "exam_date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
                 },
             },
         },
@@ -57,7 +50,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "generate_study_plan",
-            "description": "Generate a day-by-day study plan for the student. Only call this once exam_type and exam_date are both known and the student has agreed to receive a plan.",
+            "description": "Generate a plan after exam details are known and the student agrees.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -65,11 +58,43 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "get_study_plan_day",
-            "description": "Fetch the exact plan entry for a date after a study plan exists.",
+            "description": "Fetch the exact plan entry for a date.",
             "parameters": {
                 "type": "object",
                 "properties": {"requested_date": {"type": "string", "description": "Date in YYYY-MM-DD format."}},
                 "required": ["requested_date"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "record_practice_result",
+            "description": "Record practice results and return accuracy-based review guidance.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {"type": "string"},
+                    "attempted": {"type": "integer", "minimum": 1},
+                    "correct": {"type": "integer", "minimum": 0},
+                    "notes": {"type": "string"},
+                },
+                "required": ["topic", "attempted", "correct"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "adjust_study_plan",
+            "description": "Regenerate the plan after missed days or an exam-date change.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "exam_date": {"type": "string", "description": "Optional YYYY-MM-DD date."},
+                    "reason": {"type": "string"},
+                },
+                "required": ["reason"],
             },
         },
     },
@@ -84,6 +109,7 @@ def _handle_tool_call(session_id: str, name: str, args: dict) -> str:
         return f"Profile updated: {json.dumps(args)}"
 
     if name == "generate_study_plan":
+        profile = session_store.get_profile(session_id)
         exam_type = profile.get("exam_type")
         exam_date_str = profile.get("exam_date")
         if not exam_type or not exam_date_str:
@@ -99,6 +125,47 @@ def _handle_tool_call(session_id: str, name: str, args: dict) -> str:
             "Tell the student the plan is ready, give a brief overview of the phases, "
             "and describe today's specific tasks (day 1)."
         )
+
+    if name == "record_practice_result":
+        attempted = args.get("attempted", 0)
+        correct = args.get("correct", 0)
+        if correct > attempted:
+            return "The correct count cannot be greater than attempted. Ask the student to correct the result."
+        result = {
+            "topic": args.get("topic", "General practice"),
+            "attempted": attempted,
+            "correct": correct,
+            "accuracy": round(correct / attempted * 100, 1) if attempted else 0,
+            "notes": args.get("notes", ""),
+            "date": date.today().isoformat(),
+        }
+        log = list(profile.get("practice_log") or [])
+        log.append(result)
+        session_store.update_profile(session_id, {"practice_log": log[-50:]})
+        accuracy = result["accuracy"]
+        if accuracy >= 80:
+            review = "Strong work. Keep this topic in maintenance revision and move to mixed timed practice."
+        elif accuracy >= 60:
+            review = "You have a useful base. Revisit the mistakes, then retry a smaller timed set tomorrow."
+        else:
+            review = "Treat this as a revision signal: review the concept, solve worked examples, and retry 10 easier questions."
+        return f"Practice result saved: {json.dumps(result)}. Review recommendation: {review}"
+
+    if name == "adjust_study_plan":
+        profile = session_store.get_profile(session_id)
+        exam_type = profile.get("exam_type")
+        exam_date_str = args.get("exam_date") or profile.get("exam_date")
+        if not exam_type or not exam_date_str:
+            return "Cannot adjust the plan until the exam type and exam date are known."
+        try:
+            plan = generate_study_plan(exam_type, date.fromisoformat(exam_date_str))
+        except ValueError as exc:
+            return f"Could not adjust plan: {exc}"
+        session_store.update_profile(
+            session_id,
+            {"exam_date": exam_date_str, "study_plan": plan},
+        )
+        return f"Plan adjusted from today because {args.get('reason')}. {summarize_plan(plan)}"
 
     if name == "get_study_plan_day":
         plan = profile.get("study_plan")

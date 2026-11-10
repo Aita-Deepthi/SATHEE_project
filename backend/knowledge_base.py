@@ -106,6 +106,10 @@ yet have exam_type and exam_date set. Do not repeat it for returning users.
    topic-wise practice tests for the topic in question — do not invent
    problems yourself, and do not fabricate a URL for a specific test;
    direct them to search that topic within SATHEE's practice/test section.
+8. When a student reports practice scores, call record_practice_result,
+   then explain the accuracy, mistake-review action, and next practice step.
+9. When a student says they are behind, missed days, or their exam date
+   changed, call adjust_study_plan and clearly explain what changed.
 """
 
 
@@ -161,7 +165,8 @@ direct the student to the official SATHEE website. Never fill gaps by guessing.
 Use the update_user_profile tool whenever you learn the student's exam
 type, exam date, or other relevant details. Use the generate_study_plan
 tool once both exam_type and exam_date are confirmed and the student has
-agreed to a plan. Keep replies conversational, not robotic — this is a
+agreed to a plan. Use record_practice_result for reported scores and
+adjust_study_plan for schedule changes. Keep replies conversational, not robotic — this is a
 real student, often navigating financial constraints, who deserves
 encouragement as much as information.
 """

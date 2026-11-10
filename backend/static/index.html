@@ -6,34 +6,43 @@
 <title>SATHEE Guidance Agent</title>
 <style>
   :root {
-    --ink: #12203a;        /* deep study-lamp navy */
-    --paper: #f6f3ea;      /* soft unbleached paper */
+    --ink: #17243b;
+    --paper: #f5f7fb;
     --paper-raised: #ffffff;
     --marigold: #e0932c;   /* diya-flame accent, warm not neon */
     --marigold-deep: #b96f18;
-    --line: #d9d2bf;
-    --muted: #6b6455;
+    --line: #e1e6ef;
+    --muted: #718096;
     --good: #3f7d5c;
+    --shadow: 0 14px 40px rgba(23,36,59,0.08);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     min-height: 100vh;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(224,147,44,0.12), transparent 28rem),
+      var(--paper);
   }
   header {
-    padding: 22px 28px 16px;
+    padding: 18px clamp(18px, 4vw, 48px);
     border-bottom: 1px solid var(--line);
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 14px;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 4;
   }
   header .brand {
-    font-size: 22px;
+    font-size: 20px;
     letter-spacing: 0.02em;
     font-weight: 700;
   }
@@ -54,7 +63,7 @@
     background: var(--paper-raised);
     color: var(--ink);
     padding: 7px 14px;
-    border-radius: 999px;
+    border-radius: 10px;
     font-size: 13px;
     cursor: pointer;
   }
@@ -63,22 +72,118 @@
     color: var(--paper);
     border-color: var(--ink);
   }
+  nav button:hover { border-color: var(--marigold); }
+  #profile-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-weight: 700;
+  }
+  #profile-menu {
+    position: absolute;
+    right: 28px;
+    top: 72px;
+    z-index: 3;
+    display: none;
+    width: 250px;
+    padding: 16px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(18,32,58,0.12);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  #profile-menu strong, #profile-menu small { display: block; overflow-wrap: anywhere; }
+  #profile-menu small { color: var(--muted); margin: 4px 0 12px; }
+  #profile-menu button, #new-chat-button {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 9px;
+    cursor: pointer;
+    text-align: left;
+  }
+  #profile-menu button:hover, #new-chat-button:hover { background: var(--paper); }
+  #chat-layout {
+    display: flex;
+    max-width: 1180px;
+    height: calc(100vh - 78px);
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  #history-panel {
+    width: 270px;
+    padding: 28px 16px 28px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    border-right: 1px solid var(--line);
+    background: rgba(255,255,255,0.46);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #history-panel h3 { margin: 0 0 14px 4px; font-size: 14px; letter-spacing: 0.02em; }
+  #history-panel h3::after {
+    content: "  Your conversations";
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 11px;
+  }
+  #new-chat-button { margin-bottom: 10px; text-align: center; }
+  #history-list { display: grid; gap: 6px; }
+  .history-item {
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 11px 12px;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .history-item:hover, .history-item.active { background: var(--paper-raised); box-shadow: var(--shadow); }
+  .history-item.active { box-shadow: inset 3px 0 var(--marigold), var(--shadow); font-weight: 600; }
+  @media (max-width: 760px) {
+    #chat-layout { display: block; }
+    #history-panel { width: auto; padding: 12px 20px 0; border-right: 0; }
+    #history-list { display: flex; overflow-x: auto; padding-bottom: 4px; }
+    .history-item { min-width: 170px; }
+    #chat-layout { height: auto; min-height: calc(100vh - 78px); overflow: visible; }
+    #history-panel { max-height: 170px; }
+    main { height: auto; min-height: calc(100vh - 250px); padding: 24px 16px 116px; overflow: visible; }
+    header { padding: 14px 16px; }
+    header .sub { display: none; }
+    nav button:not(#profile-button) { padding: 8px 10px; }
+    #profile-menu { right: 16px; top: 62px; }
+  }
 
-  main { max-width: 760px; margin: 0 auto; padding: 20px 20px 100px; }
+  main {
+    flex: 1;
+    min-width: 0;
+    max-width: 820px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 36px 34px 120px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 
   /* Chat */
-  #chat-view { display: flex; flex-direction: column; gap: 12px; }
+  #chat-view { display: flex; flex-direction: column; gap: 16px; }
   .msg {
-    max-width: 82%;
-    padding: 12px 15px;
-    border-radius: 14px;
+    max-width: min(720px, 88%);
+    padding: 14px 17px;
+    border-radius: 16px;
     line-height: 1.5;
-    font-size: 15.5px;
+    font-size: 15px;
     white-space: pre-wrap;
   }
   .msg.user {
     align-self: flex-end;
-    background: var(--ink);
+    background: linear-gradient(135deg, var(--ink), #263b60);
     color: var(--paper);
     border-bottom-right-radius: 4px;
   }
@@ -87,12 +192,13 @@
     background: var(--paper-raised);
     border: 1px solid var(--line);
     border-bottom-left-radius: 4px;
+    box-shadow: 0 3px 12px rgba(18,32,58,0.04);
   }
   #composer {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background: linear-gradient(to top, var(--paper) 60%, transparent);
-    padding: 18px 20px 22px;
+    padding: 18px 24px 24px;
   }
   #composer form {
     max-width: 760px;
@@ -101,9 +207,14 @@
     gap: 8px;
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 6px 6px 6px 16px;
-    box-shadow: 0 6px 20px rgba(18,32,58,0.08);
+    border-radius: 16px;
+    padding: 7px 7px 7px 17px;
+    box-shadow: var(--shadow);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #composer form:focus-within {
+    border-color: var(--marigold);
+    box-shadow: 0 8px 26px rgba(224,147,44,0.18);
   }
   #composer input {
     flex: 1;
@@ -121,14 +232,22 @@
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
     font-size: 14px;
-    border-radius: 10px;
-    padding: 10px 18px;
+    border-radius: 11px;
+    padding: 11px 20px;
     cursor: pointer;
   }
   #composer button:hover { background: var(--marigold-deep); }
 
   /* Plan view */
   #plan-view { display: none; }
+  #plan-view::before {
+    content: "A focused plan, adjusted as you learn";
+    display: block;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
   #plan-empty {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--muted);
@@ -164,6 +283,7 @@
     border-radius: 10px;
     padding: 18px 20px;
     margin-bottom: 28px;
+    box-shadow: var(--shadow);
   }
   .today-card .eyebrow {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -201,7 +321,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 4px;
+    padding: 12px 8px;
     border-bottom: 1px solid var(--line);
     font-size: 13.5px;
   }
@@ -215,6 +335,44 @@
     border: 1px solid var(--line);
   }
   .day-row .tp { flex: 1; color: var(--muted); }
+  #auth-view {
+    max-width: 390px;
+    margin: 9vh auto;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 34px;
+    box-shadow: var(--shadow);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  #auth-view h2 { margin: 0 0 8px; font-family: inherit; font-size: 25px; }
+  #auth-view p { color: var(--muted); line-height: 1.5; margin-bottom: 24px; }
+  #auth-view form { display: grid; gap: 12px; }
+  #auth-view input {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+  }
+  #auth-view button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    background: linear-gradient(135deg, var(--ink), #263b60);
+    color: var(--paper);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #auth-switch {
+    border: 0;
+    background: transparent;
+    color: var(--marigold-deep);
+    cursor: pointer;
+    padding: 8px 0 0;
+  }
+  #auth-error { color: #b64b3c; min-height: 20px; font-size: 13px; }
+  #app-shell { display: none; }
+  .empty-history { color: var(--muted); font-size: 12px; line-height: 1.5; padding: 8px 4px; }
 </style>
 </head>
 <body>
@@ -227,9 +385,34 @@
   <nav>
     <button id="tab-chat" class="active">Chat</button>
     <button id="tab-plan">My Study Plan</button>
+    <button id="profile-button" title="Student profile">S</button>
   </nav>
 </header>
+<div id="profile-menu">
+  <strong id="profile-email"></strong>
+  <small id="profile-details">Student account</small>
+  <button id="logout-button">Log out</button>
+</div>
 
+<div id="auth-view">
+  <h2 id="auth-title">Student login</h2>
+  <p id="auth-description">Log in to continue to your study plan and chat history.</p>
+  <form id="auth-form">
+    <input id="auth-email" type="email" placeholder="Email address" autocomplete="email" required>
+    <input id="auth-password" type="password" placeholder="Password (8+ characters)" autocomplete="current-password" minlength="8" required>
+    <button id="auth-submit" type="submit">Log in</button>
+  </form>
+  <div id="auth-error"></div>
+  <button id="auth-switch" type="button">New student? Create an account</button>
+</div>
+
+<div id="app-shell">
+<div id="chat-layout">
+<aside id="history-panel">
+  <h3>Chat history</h3>
+  <button id="new-chat-button" type="button">+ New chat</button>
+  <div id="history-list"></div>
+</aside>
 <main>
   <div id="chat-view">
     <div class="msg bot">Hi! I'm here to help you make the most of SATHEE — IIT Kanpur's free JEE/NEET prep platform. Which exam are you preparing for?</div>
@@ -240,12 +423,14 @@
     <div id="plan-content" style="display:none;"></div>
   </div>
 </main>
+</div>
 
 <div id="composer">
   <form id="chat-form">
     <input id="chat-input" type="text" placeholder="Type your message…" autocomplete="off" />
     <button type="submit">Send</button>
   </form>
+</div>
 </div>
 
 <script>
@@ -257,15 +442,92 @@ const PHASE_COLORS = {
 };
 
 let sessionId = localStorage.getItem("sathee_session_id");
+let conversationId = localStorage.getItem("sathee_conversation_id");
+let studentProfile = {};
+let registering = false;
+const authView = document.getElementById("auth-view");
+const appShell = document.getElementById("app-shell");
+const authForm = document.getElementById("auth-form");
+const authTitle = document.getElementById("auth-title");
+const authDescription = document.getElementById("auth-description");
+const authSubmit = document.getElementById("auth-submit");
+const authSwitch = document.getElementById("auth-switch");
+const authError = document.getElementById("auth-error");
+const profileButton = document.getElementById("profile-button");
+const profileMenu = document.getElementById("profile-menu");
+const profileEmail = document.getElementById("profile-email");
+const historyList = document.getElementById("history-list");
+const profileDetails = document.getElementById("profile-details");
 
-async function initSession() {
-  if (!sessionId) {
-    const res = await fetch("/api/session/new");
-    const data = await res.json();
-    sessionId = data.session_id;
-    localStorage.setItem("sathee_session_id", sessionId);
-  }
+function updateProfileDetails() {
+  const exam = studentProfile.exam_type || "Exam not selected";
+  const date = studentProfile.exam_date ? ` · Exam date: ${studentProfile.exam_date}` : "";
+  const practice = studentProfile.practice_log?.length
+    ? ` · ${studentProfile.practice_log.length} practice reviews`
+    : "";
+  profileDetails.textContent = exam + date + practice;
 }
+
+function updateAuthMode() {
+  authTitle.textContent = registering ? "Create student account" : "Student login";
+  authDescription.textContent = registering
+    ? "Use your email to save your study plan and chat history."
+    : "Log in to continue to your study plan and chat history.";
+  authSubmit.textContent = registering ? "Create account" : "Log in";
+  authSwitch.textContent = registering
+    ? "Already registered? Log in"
+    : "New student? Create an account";
+  document.getElementById("auth-password").autocomplete = registering ? "new-password" : "current-password";
+  authError.textContent = "";
+}
+
+authSwitch.addEventListener("click", () => {
+  registering = !registering;
+  updateAuthMode();
+});
+
+profileButton.addEventListener("click", () => {
+  profileMenu.style.display = profileMenu.style.display === "block" ? "none" : "block";
+});
+
+document.getElementById("logout-button").addEventListener("click", () => {
+  localStorage.removeItem("sathee_session_id");
+  localStorage.removeItem("sathee_conversation_id");
+  localStorage.removeItem("sathee_email");
+  window.location.reload();
+});
+
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authError.textContent = "";
+  const endpoint = registering ? "/api/auth/register" : "/api/auth/login";
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        email: document.getElementById("auth-email").value,
+        password: document.getElementById("auth-password").value,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "Authentication failed.");
+    sessionId = data.session_id;
+    conversationId = data.conversation_id;
+    localStorage.setItem("sathee_session_id", sessionId);
+    localStorage.setItem("sathee_conversation_id", conversationId);
+    localStorage.setItem("sathee_email", data.email);
+    profileEmail.textContent = data.email;
+    studentProfile = data.profile || {};
+    updateProfileDetails();
+    authView.style.display = "none";
+    appShell.style.display = "block";
+    await loadChatHistory();
+    await loadConversations();
+  } catch (error) {
+    authError.textContent = error.message;
+  }
+});
 
 const chatView = document.getElementById("chat-view");
 const chatForm = document.getElementById("chat-form");
@@ -277,6 +539,64 @@ function addMessage(role, text) {
   div.textContent = text;
   chatView.appendChild(div);
   window.scrollTo(0, document.body.scrollHeight);
+}
+
+async function loadConversations() {
+  const response = await fetch(`/api/chat/conversations/${encodeURIComponent(sessionId)}`);
+  if (!response.ok) return;
+  const data = await response.json();
+  historyList.innerHTML = "";
+  if (!data.conversations.length) {
+    historyList.innerHTML = '<div class="empty-history">Your saved chats will appear here.</div>';
+    return;
+  }
+  data.conversations.forEach(item => {
+    const button = document.createElement("button");
+    button.className = "history-item" + (item.id === conversationId ? " active" : "");
+    button.textContent = item.title;
+    button.title = item.title;
+    button.addEventListener("click", () => openConversation(item.id));
+    historyList.appendChild(button);
+  });
+}
+
+async function refreshProfile() {
+  const response = await fetch(`/api/auth/session/${encodeURIComponent(sessionId)}?conversation_id=${encodeURIComponent(conversationId)}`);
+  if (!response.ok) return;
+  const data = await response.json();
+  studentProfile = data.profile || {};
+  updateProfileDetails();
+}
+
+async function openConversation(id) {
+  conversationId = id;
+  localStorage.setItem("sathee_conversation_id", conversationId);
+  chatView.innerHTML = "";
+  await loadChatHistory();
+  await loadConversations();
+}
+
+document.getElementById("new-chat-button").addEventListener("click", async () => {
+  const response = await fetch(`/api/chat/conversations/${encodeURIComponent(sessionId)}`, {method: "POST"});
+  if (!response.ok) return;
+  const data = await response.json();
+  conversationId = data.conversation_id;
+  localStorage.setItem("sathee_conversation_id", conversationId);
+  chatView.innerHTML = "";
+  addMessage("bot", "What would you like to study today?");
+  await loadConversations();
+});
+
+async function loadChatHistory() {
+  const response = await fetch(`/api/chat/history/${encodeURIComponent(sessionId)}?conversation_id=${encodeURIComponent(conversationId)}`);
+  if (!response.ok) return;
+  const data = await response.json();
+  chatView.innerHTML = "";
+  if (!data.history.length) {
+    addMessage("bot", "Hi! I'm here to help you make the most of SATHEE — IIT Kanpur's free JEE/NEET prep platform. Which exam are you preparing for?");
+    return;
+  }
+  data.history.forEach(message => addMessage(message.role, message.content));
 }
 
 chatForm.addEventListener("submit", async (e) => {
@@ -295,11 +615,20 @@ chatForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, message: text }),
+      body: JSON.stringify({ session_id: sessionId, conversation_id: conversationId, message: text }),
     });
     const data = await res.json();
+    if (res.status === 401) {
+      localStorage.removeItem("sathee_session_id");
+      sessionId = null;
+      authView.style.display = "block";
+      appShell.style.display = "none";
+      throw new Error(data.detail || "Please log in first.");
+    }
     thinking.remove();
     addMessage("bot", data.reply);
+    await refreshProfile();
+    await loadConversations();
     if (planTab.classList.contains("active")) loadPlan();
   } catch (err) {
     thinking.remove();
@@ -327,7 +656,7 @@ planTab.addEventListener("click", () => {
 });
 
 async function loadPlan() {
-  const res = await fetch(`/api/study-plan/${sessionId}`);
+  const res = await fetch(`/api/study-plan/${sessionId}?conversation_id=${encodeURIComponent(conversationId)}`);
   const data = await res.json();
   const empty = document.getElementById("plan-empty");
   const content = document.getElementById("plan-content");
@@ -396,7 +725,35 @@ function renderPlan(plan, today) {
   content.appendChild(list);
 }
 
-initSession();
+updateAuthMode();
+if (sessionId) {
+  fetch(`/api/auth/session/${encodeURIComponent(sessionId)}`)
+    .then(response => {
+      if (!response.ok) throw new Error("Session expired");
+      return response.json();
+    })
+    .then(data => {
+      conversationId = data.conversation_id;
+      studentProfile = data.profile || {};
+      localStorage.setItem("sathee_conversation_id", conversationId);
+      profileEmail.textContent = data.email || localStorage.getItem("sathee_email") || "";
+      updateProfileDetails();
+      authView.style.display = "none";
+      appShell.style.display = "block";
+      return loadChatHistory();
+    })
+    .then(() => {
+      return loadConversations();
+    })
+    .catch(() => {
+      localStorage.removeItem("sathee_session_id");
+      localStorage.removeItem("sathee_email");
+      sessionId = null;
+      conversationId = null;
+      authView.style.display = "block";
+      appShell.style.display = "none";
+    });
+}
 </script>
 
 </body>
